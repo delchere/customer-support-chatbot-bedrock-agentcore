@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "id": "t1_bug_report",
+      "prompt": "The search bar freezes whenever I type 'shoes'. I am using Firefox on Windows 11.",
+      "expected": "Acknowledges the technical issue and asks for the missing information (steps to reproduce) before submitting a bug report."
+    },
+    {
+      "id": "t2_faq_question",
+      "prompt": "What is your return policy for international orders?",
+      "expected": "Answers the user query strictly using the provided FAQ document."
+    },
+    {
+      "id": "t3_other_request",
+      "prompt": "Can I talk to someone about partnering with your store for a corporate sponsorship?",
+      "expected": "Politely informs the user that this request cannot be handled directly and provides the human support line 1-800-555-0199."
+    }
+  ]
+}
