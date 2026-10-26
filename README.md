@@ -1,61 +1,61 @@
-# Customer Support Chatbot avec Amazon Bedrock AgentCore
+# Customer Support Chatbot with Amazon Bedrock AgentCore
 
 <p align="center">
   <img src="first_project.png" alt="Udacity – Project Completion: Customer Support Chatbot" width="320">
 </p>
 
-Chatbot de support client pour une boutique en ligne, construit sur **Amazon Bedrock AgentCore** (harness managé + Gateway MCP) avec le modèle **Amazon Nova Pro**. Projet réalisé dans le cadre du parcours *Agentic AI Engineer* d'Udacity.
+A customer support chatbot for an online shop, built on **Amazon Bedrock AgentCore** (managed harness + MCP Gateway) with the **Amazon Nova Pro** model. Completed as part of Udacity's *Agentic AI Engineer* program.
 
-Le chatbot classe chaque message client dans l'une de trois catégories :
+The chatbot routes every customer message into one of three categories:
 
-| Catégorie | Comportement |
+| Category | Behavior |
 |---|---|
-| **Bug report** | Collecte, une question à la fois, la description, les étapes de reproduction et l'environnement, puis appelle l'outil `create_bug_report` et renvoie le numéro de ticket. |
-| **Question plateforme** | Répond **uniquement** à partir de la FAQ (`online_shop_faq.md`). Si la réponse n'y figure pas, redirige vers le support humain (1-800-555-0199). |
-| **Autre demande** | Partenariats, litiges, réclamations… : redirige poliment vers le support humain. |
+| **Bug report** | Collects the description, steps to reproduce and environment, one question at a time, then calls the `create_bug_report` tool and returns the ticket ID. |
+| **Platform question** | Answers **only** from the FAQ (`online_shop_faq.md`). If the answer is not there, redirects to human support (1-800-555-0199). |
+| **Other request** | Partnerships, disputes, complaints…: politely redirects to human support. |
 
 ## Architecture
 
 ```
-Utilisateur ──► chat.py ──► AgentCore Harness (Nova Pro + system prompt + FAQ)
-                                   │
-                                   ▼ (outil MCP)
-                            AgentCore Gateway
-                                   │
-                                   ▼
-                     Lambda create_bug_report ──► DynamoDB (tickets)
+User ──► chat.py ──► AgentCore Harness (Nova Pro + system prompt + FAQ)
+                            │
+                            ▼ (MCP tool)
+                     AgentCore Gateway
+                            │
+                            ▼
+              create_bug_report Lambda ──► DynamoDB (tickets)
 ```
 
-- **CloudFormation** (`cloudformation-tool.yaml`) : table DynamoDB, fonction Lambda et rôles IAM (Lambda, Gateway, exécution du harness).
-- **Gateway AgentCore** (`setup_gateway.py`) : expose la Lambda comme outil MCP `bugreports___create_bug_report` (auth AWS_IAM).
-- **Harness AgentCore** (`create_harness.py`) : agent managé, prompt système (`system_prompt.txt`) dans lequel la FAQ est injectée via `{{FAQ}}`, décodage glouton pour un appel d'outil fiable.
-- **Évaluation** (`cloudformation-testing.yaml`, `generate-eval-dataset.py`) : bucket S3 + rôle IAM pour **Bedrock Evaluations** en mode *LLM-as-a-judge* (bring-your-own-inference).
+- **CloudFormation** (`cloudformation-tool.yaml`): DynamoDB table, Lambda function and IAM roles (Lambda, Gateway, harness execution).
+- **AgentCore Gateway** (`setup_gateway.py`): exposes the Lambda as the MCP tool `bugreports___create_bug_report` (AWS_IAM auth).
+- **AgentCore Harness** (`create_harness.py`): managed agent with the system prompt (`system_prompt.txt`), into which the FAQ is injected via `{{FAQ}}`; greedy decoding for reliable tool calling.
+- **Evaluation** (`cloudformation-testing.yaml`, `generate-eval-dataset.py`): S3 bucket + IAM role for **Bedrock Evaluations** in *LLM-as-a-judge* mode (bring-your-own-inference).
 
-## Structure du dépôt
+## Repository layout
 
-| Fichier | Rôle |
+| File | Purpose |
 |---|---|
-| `cloudformation-tool.yaml` | Infrastructure de l'outil (DynamoDB, Lambda, IAM) |
-| `cloudformation-testing.yaml` | Infrastructure d'évaluation (S3, rôle Bedrock Evaluations) |
-| `create_bug_report.py` | Code de la Lambda (miroir du code inline du template) |
-| `setup_gateway.py` | Création de la Gateway et de sa cible Lambda |
-| `create_harness.py` | Création / mise à jour du harness |
-| `system_prompt.txt` | Prompt système et règles de routage |
-| `online_shop_faq.md` | Base de connaissances FAQ |
-| `chat.py` | Chat interactif en terminal avec le harness |
-| `harness-tests.json` | Cas de test (bug, FAQ, autre demande) |
-| `generate-eval-dataset.py` | Génère le dataset JSONL pour Bedrock Evaluations |
-| `cleanup_agentcore.py` | Supprime les ressources AgentCore |
-| `Customer Support Chatbot with Amazon Bedrock AgentCore-1.pdf` | Rapport avec captures d'écran des tests |
+| `cloudformation-tool.yaml` | Tool infrastructure (DynamoDB, Lambda, IAM) |
+| `cloudformation-testing.yaml` | Evaluation infrastructure (S3, Bedrock Evaluations role) |
+| `create_bug_report.py` | Lambda code (mirrors the inline code in the template) |
+| `setup_gateway.py` | Creates the Gateway and its Lambda target |
+| `create_harness.py` | Creates / updates the harness |
+| `system_prompt.txt` | System prompt and routing rules |
+| `online_shop_faq.md` | FAQ knowledge base |
+| `chat.py` | Interactive terminal chat with the harness |
+| `harness-tests.json` | Test cases (bug, FAQ, other request) |
+| `generate-eval-dataset.py` | Generates the JSONL dataset for Bedrock Evaluations |
+| `cleanup_agentcore.py` | Deletes the AgentCore resources |
+| `Customer Support Chatbot with Amazon Bedrock AgentCore-1.pdf` | Report with test screenshots |
 
-## Mise en route
+## Getting started
 
-Prérequis : Python 3, identifiants AWS configurés, région `us-east-1`, accès au modèle Amazon Nova Pro.
+Prerequisites: Python 3, configured AWS credentials, region `us-east-1`, access to the Amazon Nova Pro model.
 
 ```bash
 pip install -r requirements.txt
 
-# 1. Infrastructure de l'outil
+# 1. Tool infrastructure
 aws cloudformation deploy --template-file cloudformation-tool.yaml \
   --stack-name bug-report-tool-stack --capabilities CAPABILITY_NAMED_IAM --region us-east-1
 
@@ -63,11 +63,11 @@ aws cloudformation deploy --template-file cloudformation-tool.yaml \
 python setup_gateway.py
 python create_harness.py
 
-# 3. Discuter avec le chatbot
+# 3. Chat with the bot
 python chat.py
 ```
 
-## Évaluation
+## Evaluation
 
 ```bash
 aws cloudformation deploy --template-file cloudformation-testing.yaml \
@@ -76,9 +76,9 @@ aws cloudformation deploy --template-file cloudformation-testing.yaml \
 python generate-eval-dataset.py --tests-json harness-tests.json
 ```
 
-Le JSONL produit est chargé dans S3 puis évalué par un job **Bedrock Evaluations** (LLM-as-a-judge). Les résultats sont dans `support-chatbot-eval-run-1/` et dans le rapport PDF.
+The generated JSONL is uploaded to S3 and scored by a **Bedrock Evaluations** job (LLM-as-a-judge). Results are in `support-chatbot-eval-run-1/` and in the PDF report.
 
-## Nettoyage
+## Cleanup
 
 ```bash
 python cleanup_agentcore.py
@@ -87,8 +87,8 @@ aws s3 rm s3://<EvalDatasetBucketName> --recursive
 aws cloudformation delete-stack --stack-name bug-report-testing-stack --region us-east-1
 ```
 
-> `agentcore_config.json` (généré, contient les ARN du compte AWS) est exclu du dépôt via `.gitignore`.
+> `agentcore_config.json` (generated, contains the AWS account ARNs) is excluded from the repository via `.gitignore`.
 
-## Auteur
+## Author
 
 Delchere Dontsa — [@delchere](https://github.com/delchere)
